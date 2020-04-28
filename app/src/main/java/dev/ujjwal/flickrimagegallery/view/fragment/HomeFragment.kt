@@ -10,6 +10,8 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import dev.ujjwal.flickrimagegallery.R
+import dev.ujjwal.flickrimagegallery.model.network.FlickrPhoto
+import dev.ujjwal.flickrimagegallery.model.storage.Photo
 import dev.ujjwal.flickrimagegallery.view.adapter.HomeRecyclerViewAdapter
 import dev.ujjwal.flickrimagegallery.viewmodel.HomeViewModel
 import kotlinx.android.synthetic.main.fragment_home.*
@@ -21,6 +23,7 @@ class HomeFragment : Fragment() {
     private lateinit var staggeredGridLayoutManager: StaggeredGridLayoutManager
 
     private lateinit var viewModel: HomeViewModel
+    private var listPhoto: List<Photo> = listOf()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_home, container, false)
@@ -51,5 +54,38 @@ class HomeFragment : Fragment() {
                 swipeRefreshLayout.isRefreshing = false
             }
         })
+
+        viewModel.allPhoto.observe(viewLifecycleOwner, Observer {
+            it?.let {
+                listPhoto = it
+                if (viewModel.error.value!!) {
+                    updateRecyclerView()
+                }
+            }
+        })
+
+        viewModel.error.observe(viewLifecycleOwner, Observer { error ->
+            error?.let {
+                if (it) {
+                    updateRecyclerView()
+                }
+            }
+        })
+    }
+
+    private fun updateRecyclerView() {
+        val listFlickrPhoto: ArrayList<FlickrPhoto> = ArrayList()
+        for (photo in listPhoto) {
+            val flickrPhoto = FlickrPhoto()
+            flickrPhoto.title = photo.title
+            flickrPhoto.url = photo.url_s
+            flickrPhoto.width = photo.width_s
+            flickrPhoto.height = photo.height_s
+
+            listFlickrPhoto.add(flickrPhoto)
+        }
+
+        homeRecyclerViewAdapter.updatePhoto(listFlickrPhoto)
+        swipeRefreshLayout.isRefreshing = false
     }
 }
